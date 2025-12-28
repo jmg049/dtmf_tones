@@ -1,9 +1,9 @@
-use pyo3::prelude::*;
-use pyo3::exceptions::PyValueError;
 use crate::{DtmfKey as RustDtmfKey, DtmfTable as RustDtmfTable, DtmfTone as RustDtmfTone};
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 extern crate std;
-use std::format;
 use std::collections::hash_map::DefaultHasher;
+use std::format;
 use std::hash::{Hash, Hasher};
 
 /// Python wrapper for DtmfKey enum
@@ -29,7 +29,10 @@ impl PyDtmfKey {
     fn from_char(c: char) -> PyResult<Self> {
         match RustDtmfKey::from_char(c) {
             Some(key) => Ok(PyDtmfKey { inner: key }),
-            None => Err(PyValueError::new_err(format!("Invalid DTMF character: '{}'", c))),
+            None => Err(PyValueError::new_err(format!(
+                "Invalid DTMF character: '{}'",
+                c
+            ))),
         }
     }
 
@@ -90,14 +93,16 @@ impl PyDtmfTone {
                 key: key.inner,
                 low_hz,
                 high_hz,
-            }
+            },
         }
     }
 
     /// The DTMF key for this tone.
     #[getter]
     fn key(&self) -> PyDtmfKey {
-        PyDtmfKey { inner: self.inner.key }
+        PyDtmfKey {
+            inner: self.inner.key,
+        }
     }
 
     /// Low frequency in Hz.
@@ -113,12 +118,21 @@ impl PyDtmfTone {
     }
 
     fn __str__(&self) -> String {
-        format!("{}: ({} Hz, {} Hz)", self.inner.key.to_char(), self.inner.low_hz, self.inner.high_hz)
+        format!(
+            "{}: ({} Hz, {} Hz)",
+            self.inner.key.to_char(),
+            self.inner.low_hz,
+            self.inner.high_hz
+        )
     }
 
     fn __repr__(&self) -> String {
-        format!("DtmfTone(key=DtmfKey('{}'), low_hz={}, high_hz={})",
-                self.inner.key.to_char(), self.inner.low_hz, self.inner.high_hz)
+        format!(
+            "DtmfTone(key=DtmfKey('{}'), low_hz={}, high_hz={})",
+            self.inner.key.to_char(),
+            self.inner.low_hz,
+            self.inner.high_hz
+        )
     }
 
     fn __eq__(&self, other: &PyDtmfTone) -> bool {
@@ -189,8 +203,7 @@ impl PyDtmfTable {
     ///     DtmfKey or None: The matching key, or None if no exact match
     #[staticmethod]
     fn from_pair_exact(low: u16, high: u16) -> Option<PyDtmfKey> {
-        RustDtmfTable::from_pair_exact(low, high)
-            .map(|key| PyDtmfKey { inner: key })
+        RustDtmfTable::from_pair_exact(low, high).map(|key| PyDtmfKey { inner: key })
     }
 
     /// Find DTMF key from frequency pair with automatic order normalization.
@@ -203,8 +216,7 @@ impl PyDtmfTable {
     ///     DtmfKey or None: The matching key, or None if no exact match
     #[staticmethod]
     fn from_pair_normalised(a: u16, b: u16) -> Option<PyDtmfKey> {
-        RustDtmfTable::from_pair_normalised(a, b)
-            .map(|key| PyDtmfKey { inner: key })
+        RustDtmfTable::from_pair_normalised(a, b).map(|key| PyDtmfKey { inner: key })
     }
 
     /// Find DTMF key from frequency pair with tolerance (integer version).
@@ -217,7 +229,8 @@ impl PyDtmfTable {
     /// Returns:
     ///     DtmfKey or None: The matching key within tolerance, or None
     fn from_pair_tol_u32(&self, low: u32, high: u32, tol_hz: u32) -> Option<PyDtmfKey> {
-        self.inner.from_pair_tol_u32(low, high, tol_hz)
+        self.inner
+            .from_pair_tol_u32(low, high, tol_hz)
             .map(|key| PyDtmfKey { inner: key })
     }
 
@@ -231,7 +244,8 @@ impl PyDtmfTable {
     /// Returns:
     ///     DtmfKey or None: The matching key within tolerance, or None
     fn from_pair_tol_f64(&self, low: f64, high: f64, tol_hz: f64) -> Option<PyDtmfKey> {
-        self.inner.from_pair_tol_f64(low, high, tol_hz)
+        self.inner
+            .from_pair_tol_f64(low, high, tol_hz)
             .map(|key| PyDtmfKey { inner: key })
     }
 
@@ -279,7 +293,10 @@ fn dtmf_table(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Add module-level constants
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("__doc__", "DTMF (Dual-Tone Multi-Frequency) frequency table for telephony applications")?;
+    m.add(
+        "__doc__",
+        "DTMF (Dual-Tone Multi-Frequency) frequency table for telephony applications",
+    )?;
 
     Ok(())
 }

@@ -1,4 +1,39 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+// Correctness and logic
+#![warn(clippy::unit_cmp)] // Detects comparing unit types
+#![warn(clippy::match_same_arms)] // Duplicate match arms
+#![allow(clippy::result_large_err)] // Allow large error types for comprehensive error handling
+#![allow(clippy::missing_const_for_fn)] // Functions may need mutations in the future
+#![allow(clippy::collapsible_if)] // Sometimes clearer to have separate conditions
+#![allow(clippy::missing_panics_doc)] // Panics are converted to proper errors where needed
+#![allow(clippy::needless_borrows_for_generic_args)] // Sometimes clearer with explicit borrows
+#![allow(clippy::if_same_then_else)] // Similar blocks may diverge in the future
+#![allow(clippy::unnecessary_cast)] // Explicit casts for clarity
+#![allow(clippy::identity_op)] // Explicit operations for clarity
+
+// Performance-focused
+#![warn(clippy::inefficient_to_string)] // `format!("{}", x)` vs `x.to_string()`
+#![warn(clippy::map_clone)] // Cloning inside `map()` unnecessarily
+#![warn(clippy::unnecessary_to_owned)] // Detects redundant `.to_owned()` or `.clone()`
+#![warn(clippy::large_stack_arrays)] // Helps avoid stack overflows
+#![warn(clippy::box_collection)] // Warns on boxed `Vec`, `String`, etc.
+#![warn(clippy::vec_box)] // Avoids using `Vec<Box<T>>` when unnecessary
+#![warn(clippy::needless_collect)] // Avoids `.collect().iter()` chains
+
+// Style and idiomatic Rust
+#![warn(clippy::redundant_clone)] // Detects unnecessary `.clone()`
+#![warn(clippy::identity_op)] // e.g., `x + 0`, `x * 1`
+#![warn(clippy::needless_return)] // Avoids `return` at the end of functions
+#![warn(clippy::let_unit_value)] // Avoids binding `()` to variables
+#![warn(clippy::manual_map)] // Use `.map()` instead of manual `match`
+#![warn(clippy::unwrap_used)] // Avoids using `unwrap()`
+#![warn(clippy::panic)] // Avoids using `panic!` in production code
+
+// Maintainability
+#![warn(clippy::missing_panics_doc)] // Docs for functions that might panic
+#![warn(clippy::missing_safety_doc)] // Docs for `unsafe` functions
+#![warn(clippy::missing_const_for_fn)] // Suggests making eligible functions `const`
+#![allow(clippy::too_many_arguments)] // Allow functions with many parameters (very few and far between)
 //! # DTMF Table
 //!
 //! A zero-heap, `no_std`, const-first implementation of the standard DTMF keypad
@@ -101,6 +136,11 @@ impl DtmfKey {
     }
 
     /// Panic-on-invalid (const), useful with char literals at compile time.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the character is not a valid DTMF key character.
+    #[allow(clippy::panic)]
     pub const fn from_char_or_panic(c: char) -> Self {
         match Self::from_char(c) {
             Some(k) => k,
@@ -379,6 +419,10 @@ impl DtmfTable {
 
     /// Snap an arbitrary (low, high) estimate to the nearest canonical pair and return (key, snapped_low, snapped_high).
     /// Uses absolute distance independently on low and high bands.
+    ///
+    /// # Panics
+    ///
+    /// This function should never panic as it always snaps to canonical frequency pairs which are guaranteed to have valid keys.
     pub fn nearest_u32(&self, low: u32, high: u32) -> (DtmfKey, u16, u16) {
         let (lo, hi) = normalise_u32_pair(low, high);
         let nearest_low = nearest_in_set_u32(lo, &Self::LOWS);
@@ -389,6 +433,10 @@ impl DtmfTable {
     }
 
     /// Floating-point variant of nearest snap.
+    ///
+    /// # Panics
+    ///
+    /// This function should never panic as it always snaps to canonical frequency pairs which are guaranteed to have valid keys.
     pub fn nearest_f64(&self, low: f64, high: f64) -> (DtmfKey, u16, u16) {
         let (lo, hi) = normalise_f64_pair(low, high);
         let nearest_low = nearest_in_set_f64(lo, &Self::LOWS);
